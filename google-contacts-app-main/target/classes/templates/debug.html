@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Information</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        pre { background: #e8e8e8; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+<h1>Debug Information</h1>
+
+<div class="section">
+    <h2>Authentication Status</h2>
+    <p>Authentication Present: <span th:class="${authPresent} ? 'success' : 'error'" th:text="${authPresent}">N/A</span></p>
+    <p>OAuth2 Client Present: <span th:class="${clientPresent} ? 'success' : 'error'" th:text="${clientPresent}">N/A</span></p>
+</div>
+
+<div class="section" th:if="${tokenScopes}">
+    <h2>Token Information</h2>
+    <p>Token Scopes:</p>
+    <ul>
+        <li th:each="scope : ${tokenScopes}" th:text="${scope}">Scope</li>
+    </ul>
+    <p>Token Expires At: <span th:text="${tokenExpiry}">N/A</span></p>
+</div>
+
+<div class="section" th:if="${userAttributes}">
+    <h2>User Attributes</h2>
+    <pre th:text="${userAttributes}">No user attributes</pre>
+</div>
+
+<div class="section">
+    <h2>Actions</h2>
+    <a href="/contacts">Try to Load Contacts</a> |
+    <a href="/">Home</a> |
+    <a href="/logout">Logout</a>
+</div>
+</body>
+</html>
