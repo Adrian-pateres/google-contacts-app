@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Google Contacts</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+        }
+        .user-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+        .message {
+            background: #fff3e0;
+            color: #ef6c00;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ef6c00;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        .contacts-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .contacts-table th,
+        .contacts-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .contacts-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        .contacts-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+        .contacts-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #45a049;
+        }
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close:hover {
+            color: #333;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25,118,210,0.2);
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* Contact Info Display */
+        .contact-emails,
+        .contact-phones {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .contact-emails a,
+        .contact-phones a {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        .contact-emails a:hover,
+        .contact-phones a:hover {
+            text-decoration: underline;
+        }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* No contacts message */
+        .no-contacts {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* Actions */
+        .page-actions {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .multiple-values {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .value-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .remove-value {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .add-value {
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>My Google Contacts</h1>
+        <button class="btn btn-success" onclick="openAddModal()">+ Add Contact</button>
+    </div>
+
+    <!-- User Info -->
+    <div class="user-info" th:if="${userName}">
+        <strong>👋 Welcome, <span th:text="${userName}">User</span>!</strong>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error" th:if="${error}">
+        <strong>❌ Error:</strong> <span th:text="${error}">An error occurred</span>
+    </div>
+
+    <!-- Info Message -->
+    <div class="message" th:if="${message}">
+        <strong>ℹ️ Info:</strong> <span th:text="${message}">Information message</span>
+    </div>
+
+    <!-- Contact Count -->
+    <div class="stats" th:if="${contactCount != null}">
+        <h3>Total Contacts: <span th:text="${contactCount}">0</span></h3>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-container" th:if="${contacts != null and !contacts.empty}">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search contacts by name, email, or phone..." onkeyup="filterContacts()">
+        <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+    </div>
+
+    <!-- Contacts Table -->
+    <div class="table-container" th:if="${contacts != null and !contacts.empty}">
+        <table class="contacts-table" id="contactsTable">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email Addresses</th>
+                <th>Phone Numbers</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="contact,iterStat : ${contacts}" th:data-index="${iterStat.index}">
+                <td>
+                    <strong th:text="${contact.name}">Contact Name</strong>
+                </td>
+                <td>
+                    <div class="contact-emails" th:if="${contact.emailAddresses != null and !contact.emailAddresses.empty}">
+                        <a th:each="email : ${contact.emailAddresses}"
+                           th:href="'mailto:' + ${email}"
+                           th:text="${email}">email@example.com</a>
+                    </div>
+                    <span th:if="${contact.emailAddresses == null or contact.emailAddresses.empty}" style="color: #999; font-style: italic;">No email</span>
+                </td>
+                <td>
+                    <div class="contact-phones" th:if="${contact.phoneNumbers != null and !contact.phoneNumbers.empty}">
+                        <a th:each="phone : ${contact.phoneNumbers}"
+                           th:href="'tel:' + ${phone}"
+                           th:text="${phone}">+1234567890</a>
+                    </div>
+                    <span th:if="${contact.phoneNumbers == null or contact.phoneNumbers.empty}" style="color: #999; font-style: italic;">No phone</span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-warning" th:onclick="'editContact(' + ${iterStat.index} + ')'">Edit</button>
+                        <button class="btn btn-danger" th:onclick="'deleteContact(' + ${iterStat.index} + ')'">Delete</button>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Contacts Message -->
+    <div class="no-contacts" th:if="${contacts == null or contacts.empty}">
+        <h3>🤷‍♀️ No contacts to display</h3>
+        <p>This could mean:</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li>Your Google account has no contacts</li>
+            <li>There was an authentication issue</li>
+            <li>The People API might not be enabled</li>
+        </ul>
+    </div>
+
+    <!-- Page Actions -->
+    <div class="page-actions">
+        <a href="/contacts" class="btn btn-primary">🔄 Refresh Contacts</a>
+        <a href="/debug" class="btn btn-secondary">🔍 Debug Info</a>
+        <a href="/" class="btn btn-secondary">🏠 Logout</a>
+    </div>
+</div>
+
+<!-- Add/Edit Contact Modal -->
+<div id="contactModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Contact</h3>
+            <button class="close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="contactName">Name *</label>
+                <input type="text" id="contactName" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email Addresses</label>
+                <div id="emailFields" class="multiple-values">
+                    <div class="value-input-group">
+                        <input type="email" class="form-control email-input" placeholder="Enter email address">
+                        <button type="button" class="remove-value" onclick="removeField(this)" style="display: none;">Remove</button>
+                    </div>
+                </div>
+                <button type="button" class="add-value" onclick="addEmailField()">+ Add Email</button>
+            </div>
+
+            <div class="form-group">
+                <label>Phone Numbers</label>
+                <div id="phoneFields" class="multiple-values">
+                    <div class="value-input-group">
+                        <input type="tel" class="form-control phone-input" placeholder="Enter phone number">
+                        <button type="button" class="remove-value" onclick="removeField(this)" style="display: none;">Remove</button>
+                    </div>
+                </div>
+                <button type="button" class="add-value" onclick="addPhoneField()">+ Add Phone</button>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-success" id="saveBtn">Save Contact</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Confirm Delete</h3>
+            <button class="close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <p>Are you sure you want to delete <strong id="deleteContactName"></strong>?</p>
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // Store contacts data
+    let contacts = /*[[${contacts}]]*/ [];
+    let editingIndex = -1;
+    let deleteIndex = -1;
+
+    // Modal functions
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add Contact';
+        document.getElementById('saveBtn').textContent = 'Add Contact';
+        document.getElementById('contactForm').reset();
+        resetFormFields();
+        editingIndex = -1;
+        document.getElementById('contactModal').classList.add('show');
+    }
+
+    function editContact(index) {
+        const contact = contacts[index];
+        document.getElementById('modalTitle').textContent = 'Edit Contact';
+        document.getElementById('saveBtn').textContent = 'Update Contact';
+
+        // Populate form
+        document.getElementById('contactName').value = contact.name || '';
+
+        // Reset and populate email fields
+        resetEmailFields();
+        if (contact.emailAddresses && contact.emailAddresses.length > 0) {
+            contact.emailAddresses.forEach((email, i) => {
+                if (i === 0) {
+                    document.querySelector('.email-input').value = email;
+                } else {
+                    addEmailField(email);
+                }
+            });
+        }
+
+        // Reset and populate phone fields
+        resetPhoneFields();
+        if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+            contact.phoneNumbers.forEach((phone, i) => {
+                if (i === 0) {
+                    document.querySelector('.phone-input').value = phone;
+                } else {
+                    addPhoneField(phone);
+                }
+            });
+        }
+
+        editingIndex = index;
+        document.getElementById('contactModal').classList.add('show');
+    }
+
+    function deleteContact(index) {
+        deleteIndex = index;
+        document.getElementById('deleteContactName').textContent = contacts[index].name || 'this contact';
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('contactModal').classList.remove('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    function confirmDelete() {
+        if (deleteIndex >= 0) {
+            const deleteBtn = document.querySelector('#deleteModal .btn-danger');
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = 'Deleting...';
+
+            deleteContactAPI(deleteIndex, deleteBtn);
+        }
+    }
+
+    // Form field management
+    function addEmailField(value = '') {
+        const emailFields = document.getElementById('emailFields');
+        const newField = document.createElement('div');
+        newField.className = 'value-input-group';
+        newField.innerHTML = `
+        <input type="email" class="form-control email-input" placeholder="Enter email address" value="${value}">
+        <button type="button" class="remove-value" onclick="removeField(this)">Remove</button>
+    `;
+        emailFields.appendChild(newField);
+        updateRemoveButtons('emailFields');
+    }
+
+    function addPhoneField(value = '') {
+        const phoneFields = document.getElementById('phoneFields');
+        const newField = document.createElement('div');
+        newField.className = 'value-input-group';
+        newField.innerHTML = `
+        <input type="tel" class="form-control phone-input" placeholder="Enter phone number" value="${value}">
+        <button type="button" class="remove-value" onclick="removeField(this)">Remove</button>
+    `;
+        phoneFields.appendChild(newField);
+        updateRemoveButtons('phoneFields');
+    }
+
+    function removeField(button) {
+        const fieldGroup = button.parentElement;
+        const container = fieldGroup.parentElement;
+        fieldGroup.remove();
+        updateRemoveButtons(container.id);
+    }
+
+    function updateRemoveButtons(containerId) {
+        const container = document.getElementById(containerId);
+        const fields = container.querySelectorAll('.value-input-group');
+        fields.forEach((field, index) => {
+            const removeBtn = field.querySelector('.remove-value');
+            if (fields.length > 1) {
+                removeBtn.style.display = 'block';
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
+
+    function resetFormFields() {
+        resetEmailFields();
+        resetPhoneFields();
+    }
+
+    function resetEmailFields() {
+        const emailFields = document.getElementById('emailFields');
+        emailFields.innerHTML = `
+        <div class="value-input-group">
+            <input type="email" class="form-control email-input" placeholder="Enter email address">
+            <button type="button" class="remove-value" onclick="removeField(this)" style="display: none;">Remove</button>
+        </div>
+    `;
+    }
+
+    function resetPhoneFields() {
+        const phoneFields = document.getElementById('phoneFields');
+        phoneFields.innerHTML = `
+        <div class="value-input-group">
+            <input type="tel" class="form-control phone-input" placeholder="Enter phone number">
+            <button type="button" class="remove-value" onclick="removeField(this)" style="display: none;">Remove</button>
+        </div>
+    `;
+    }
+
+    // Form submission
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('contactName').value.trim();
+        if (!name) {
+            alert('Please enter a contact name.');
+            return;
+        }
+
+        // Collect email addresses
+        const emailInputs = document.querySelectorAll('.email-input');
+        const emailAddresses = Array.from(emailInputs)
+            .map(input => input.value.trim())
+            .filter(email => email !== '');
+
+        // Collect phone numbers
+        const phoneInputs = document.querySelectorAll('.phone-input');
+        const phoneNumbers = Array.from(phoneInputs)
+            .map(input => input.value.trim())
+            .filter(phone => phone !== '');
+
+        const contactData = {
+            name: name,
+            emailAddresses: emailAddresses,
+            phoneNumbers: phoneNumbers
+        };
+
+        // Disable form during submission
+        const saveBtn = document.getElementById('saveBtn');
+        const originalText = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        if (editingIndex >= 0) {
+            // Update existing contact
+            updateContactAPI(editingIndex, contactData, saveBtn, originalText);
+        } else {
+            // Add new contact
+            addContactAPI(contactData, saveBtn, originalText);
+        }
+    });
+
+    // Update table and stats
+    function updateContactsTable() {
+        const tbody = document.querySelector('.contacts-table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        contacts.forEach((contact, index) => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-index', index);
+
+            // Name column
+            const nameCell = document.createElement('td');
+            nameCell.innerHTML = `<strong>${contact.name || ''}</strong>`;
+            row.appendChild(nameCell);
+
+            // Email column
+            const emailCell = document.createElement('td');
+            if (contact.emailAddresses && contact.emailAddresses.length > 0) {
+                const emailDiv = document.createElement('div');
+                emailDiv.className = 'contact-emails';
+                contact.emailAddresses.forEach(email => {
+                    const emailLink = document.createElement('a');
+                    emailLink.href = `mailto:${email}`;
+                    emailLink.textContent = email;
+                    emailDiv.appendChild(emailLink);
+                });
+                emailCell.appendChild(emailDiv);
+            } else {
+                emailCell.innerHTML = '<span style="color: #999; font-style: italic;">No email</span>';
+            }
+            row.appendChild(emailCell);
+
+            // Phone column
+            const phoneCell = document.createElement('td');
+            if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+                const phoneDiv = document.createElement('div');
+                phoneDiv.className = 'contact-phones';
+                contact.phoneNumbers.forEach(phone => {
+                    const phoneLink = document.createElement('a');
+                    phoneLink.href = `tel:${phone}`;
+                    phoneLink.textContent = phone;
+                    phoneDiv.appendChild(phoneLink);
+                });
+                phoneCell.appendChild(phoneDiv);
+            } else {
+                phoneCell.innerHTML = '<span style="color: #999; font-style: italic;">No phone</span>';
+            }
+            row.appendChild(phoneCell);
+
+            // Actions column
+            const actionsCell = document.createElement('td');
+            actionsCell.innerHTML = `
+            <div class="action-buttons">
+                <button class="btn btn-warning" onclick="editContact(${index})">Edit</button>
+                <button class="btn btn-danger" onclick="deleteContact(${index})">Delete</button>
+            </div>
+        `;
+            row.appendChild(actionsCell);
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateStats() {
+        const statsElement = document.querySelector('.stats h3 span');
+        if (statsElement) {
+            statsElement.textContent = contacts.length;
+        }
+    }
+
+    // Search functionality
+    function filterContacts() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('.contacts-table tbody tr');
+
+        rows.forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            const emails = row.cells[1].textContent.toLowerCase();
+            const phones = row.cells[2].textContent.toLowerCase();
+
+            if (name.includes(searchTerm) || emails.includes(searchTerm) || phones.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        filterContacts();
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function(e) {
+        const contactModal = document.getElementById('contactModal');
+        const deleteModal = document.getElementById('deleteModal');
+
+        if (e.target === contactModal) {
+            closeModal();
+        }
+        if (e.target === deleteModal) {
+            closeDeleteModal();
+        }
+    });
+
+    // Initialize remove button visibility
+    document.addEventListener('DOMContentLoaded', function() {
+        updateRemoveButtons('emailFields');
+        updateRemoveButtons('phoneFields');
+    });
+
+    // API Functions
+    async function addContactAPI(contactData, saveBtn, originalText) {
+        try {
+            const response = await fetch('/api/contacts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(contactData)
+            });
+
+            if (response.ok) {
+                const newContact = await response.json();
+                contacts.push(newContact);
+                updateContactsTable();
+                updateStats();
+                closeModal();
+                showSuccessMessage('Contact added successfully!');
+            } else {
+                const error = await response.json();
+                showErrorMessage('Failed to add contact: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error adding contact:', error);
+            showErrorMessage('Network error while adding contact');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        }
+    }
+
+    async function updateContactAPI(index, contactData, saveBtn, originalText) {
+        try {
+            const response = await fetch(`/api/contacts/${index}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(contactData)
+            });
+
+            if (response.ok) {
+                const updatedContact = await response.json();
+                contacts[index] = updatedContact;
+                updateContactsTable();
+                closeModal();
+                showSuccessMessage('Contact updated successfully!');
+            } else {
+                const error = await response.json();
+                showErrorMessage('Failed to update contact: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error updating contact:', error);
+            showErrorMessage('Network error while updating contact');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        }
+    }
+
+    async function deleteContactAPI(index, deleteBtn) {
+        try {
+            const response = await fetch(`/api/contacts/${index}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                contacts.splice(index, 1);
+                updateContactsTable();
+                updateStats();
+                closeDeleteModal();
+                showSuccessMessage('Contact deleted successfully!');
+            } else {
+                const error = await response.json();
+                showErrorMessage('Failed to delete contact: ' + (error.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error deleting contact:', error);
+            showErrorMessage('Network error while deleting contact');
+        } finally {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Delete';
+        }
+    }
+
+    // Message functions
+    function showSuccessMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'alert alert-success';
+        messageDiv.style.position = 'fixed';
+        messageDiv.style.top = '20px';
+        messageDiv.style.right = '20px';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.style.padding = '15px';
+        messageDiv.style.borderRadius = '5px';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.zIndex = '9999';
+        messageDiv.style.minWidth = '300px';
+        messageDiv.innerHTML = `<strong>Success:</strong> ${message}`;
+
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 3000);
+    }
+
+    function showErrorMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'alert alert-error';
+        messageDiv.style.position = 'fixed';
+        messageDiv.style.top = '20px';
+        messageDiv.style.right = '20px';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.style.padding = '15px';
+        messageDiv.style.borderRadius = '5px';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.zIndex = '9999';
+        messageDiv.style.minWidth = '300px';
+        messageDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>
